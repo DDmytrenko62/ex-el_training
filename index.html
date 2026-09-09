@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Тестовое: финансовый специалист — разбор формул Excel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBFAF8;
+  --grid:#DFE3E9;
+  --grid-strong:#C3CAD4;
+  --ink:#16202B;
+  --ink-soft:#5E6A78;
+  --ink-faint:#94A0AD;
+  --green:#0B5D3B;
+  --green-bg:#E8F2EC;
+  --red:#A81E12;
+  --red-bg:#FBEBE9;
+  --sel:#FCE8A8;
+  --chrome:#F2F1ED;
+  --shell:#EDEBE6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  background:var(--shell);
+  color:var(--ink);
+  font-family:"Inter",system-ui,sans-serif;
+  font-size:16px;
+  line-height:1.5;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- shell chrome ---------- */
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
+
+.topbar{
+  display:flex;align-items:stretch;
+  height:36px;flex:0 0 36px;
+  background:var(--chrome);
+  border-bottom:1px solid var(--grid-strong);
+}
+.addr{
+  width:96px;flex:0 0 96px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;
+  color:var(--ink);
+  background:#fff;
+  border-right:1px solid var(--grid-strong);
+}
+.fx{
+  width:42px;flex:0 0 42px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:"Source Serif 4",serif;font-style:italic;font-size:15px;
+  color:var(--ink-soft);
+  border-right:1px solid var(--grid-strong);
+}
+.fxline{
+  flex:1;min-width:0;
+  display:flex;align-items:center;
+  padding:0 14px;
+  background:#fff;
+  font-size:13.5px;color:var(--ink-soft);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+.cols{
+  display:flex;height:22px;flex:0 0 22px;
+  background:var(--chrome);
+  border-bottom:1px solid var(--grid-strong);
+}
+.corner{width:44px;flex:0 0 44px;border-right:1px solid var(--grid-strong);background:var(--chrome)}
+.cols span{
+  flex:1;text-align:center;
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--ink-faint);
+  border-right:1px solid var(--grid);
+  line-height:22px;
+}
+
+.main{flex:1;display:flex;min-height:0}
+.rows{
+  width:44px;flex:0 0 44px;
+  background:var(--chrome);
+  border-right:1px solid var(--grid-strong);
+  display:flex;flex-direction:column;
+}
+.rows span{
+  flex:1;
+  display:flex;align-items:center;justify-content:center;
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--ink-faint);
+  border-bottom:1px solid var(--grid);
+}
+
+.canvas{
+  flex:1;min-width:0;position:relative;
+  background:var(--paper);
+  background-image:
+    linear-gradient(to right,var(--grid) 1px,transparent 1px),
+    linear-gradient(to bottom,var(--grid) 1px,transparent 1px);
+  background-size:96px 34px;
+  overflow:hidden;
+}
+
+.tabs{
+  display:flex;align-items:stretch;gap:0;
+  height:34px;flex:0 0 34px;
+  background:var(--chrome);
+  border-top:1px solid var(--grid-strong);
+  padding-left:8px;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  border:none;background:transparent;
+  font:inherit;font-size:12.5px;color:var(--ink-soft);
+  padding:0 14px;cursor:pointer;white-space:nowrap;
+  border-right:1px solid var(--grid);
+  border-top:2px solid transparent;
+}
+.tab:hover{color:var(--ink);background:#F8F7F4}
+.tab[aria-current="true"]{
+  background:var(--paper);color:var(--green);font-weight:600;
+  border-top:2px solid var(--green);
+}
+.tabs .spacer{flex:1;border:none}
+.nav{display:flex;align-items:center;gap:2px;padding-right:10px}
+.nav button{
+  width:26px;height:22px;border:1px solid var(--grid-strong);
+  background:#fff;color:var(--ink-soft);border-radius:3px;
+  cursor:pointer;font-size:11px;line-height:1;
+}
+.nav button:hover{color:var(--ink);border-color:var(--ink-faint)}
+.count{
+  font-family:"IBM Plex Mono",monospace;font-size:11px;
+  color:var(--ink-faint);padding:0 12px 0 4px;align-self:center;
+}
+.progress{
+  position:absolute;left:0;bottom:0;height:2px;
+  background:var(--green);transition:width .35s ease;
+}
+
+/* ---------- slides ---------- */
+.slide{
+  position:absolute;inset:0;
+  padding:clamp(22px,3.4vh,46px) clamp(26px,4vw,72px);
+  display:none;flex-direction:column;
+  overflow-y:auto;
+}
+.slide.on{display:flex;animation:in .34s ease both}
+@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.slide.on{animation:none}.progress{transition:none}}
+
+h1{
+  font-family:"Source Serif 4",Georgia,serif;font-weight:700;
+  font-size:clamp(30px,4.4vw,58px);line-height:1.04;letter-spacing:-.018em;
+  max-width:19ch;
+}
+h2{
+  font-family:"Source Serif 4",Georgia,serif;font-weight:700;
+  font-size:clamp(21px,2.5vw,34px);line-height:1.12;letter-spacing:-.012em;
+  max-width:26ch;margin-bottom:.55em;
+}
+h3{
+  font-size:13.5px;font-weight:600;color:var(--ink-soft);
+  margin-bottom:8px;
+}
+p{max-width:74ch;color:var(--ink);font-size:clamp(14px,1.15vw,16.5px)}
+.lede{color:var(--ink-soft);font-size:clamp(14.5px,1.25vw,18px);max-width:62ch;margin-bottom:1.1em}
+.body{flex:1;display:flex;flex-direction:column;gap:clamp(12px,1.8vh,22px);min-height:0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:clamp(14px,2vw,30px);align-items:start}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(12px,1.6vw,24px);align-items:start}
+
+ul{list-style:none;display:flex;flex-direction:column;gap:.5em;max-width:70ch}
+li{
+  position:relative;padding-left:20px;
+  font-size:clamp(14px,1.15vw,16.5px);color:var(--ink);
+}
+li::before{
+  content:"";position:absolute;left:2px;top:.62em;
+  width:7px;height:7px;background:var(--sel);
+  border:1px solid #D9B84E;
+}
+li b{font-weight:600}
+li .m,p .m,td .m{font-family:"IBM Plex Mono",monospace;font-size:.92em;color:var(--green);font-weight:500}
+
+/* formula bar block */
+.f{
+  display:flex;align-items:stretch;
+  border:1px solid var(--grid-strong);
+  background:#fff;
+  box-shadow:0 1px 0 rgba(22,32,43,.05);
+}
+.f .tag{
+  flex:0 0 auto;padding:0 12px;
+  display:flex;align-items:center;
+  background:var(--chrome);border-right:1px solid var(--grid-strong);
+  font-family:"Source Serif 4",serif;font-style:italic;
+  color:var(--ink-soft);font-size:15px;
+}
+.f code{
+  flex:1;padding:12px 14px;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:clamp(12.5px,1.15vw,17px);
+  font-weight:500;color:var(--green);
+  line-height:1.45;white-space:pre-wrap;word-break:break-word;
+}
+.f.bad code{color:var(--red)}
+.f.bad .tag{color:var(--red)}
+.f + .fnote{margin-top:-6px;font-size:13px;color:var(--ink-soft);padding-left:2px}
+
+code.k{
+  font-family:"IBM Plex Mono",monospace;font-size:.9em;
+  background:#fff;border:1px solid var(--grid-strong);
+  padding:1px 5px;color:var(--ink);white-space:nowrap;
+}
+
+/* mini sheet */
+table.sheet{border-collapse:collapse;background:#fff;font-size:clamp(11.5px,1vw,14px)}
+table.sheet th,table.sheet td{
+  border:1px solid var(--grid-strong);
+  padding:5px 10px;text-align:left;font-weight:400;
+}
+table.sheet thead th,table.sheet th.rh{
+  background:var(--chrome);color:var(--ink-faint);
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  text-align:center;font-weight:500;
+}
+table.sheet td.num{text-align:right;font-family:"IBM Plex Mono",monospace}
+table.sheet td.hl{background:var(--sel)}
+table.sheet td.neg{color:var(--red);background:var(--red-bg);font-weight:600}
+table.sheet td.pos{color:var(--green)}
+table.sheet td.head{font-weight:600;background:#F5F7F9}
+
+/* reference table */
+table.ref{border-collapse:collapse;width:100%;background:#fff;font-size:clamp(11px,.95vw,13.5px)}
+table.ref th{
+  background:var(--chrome);border:1px solid var(--grid-strong);
+  padding:6px 10px;text-align:left;font-size:11.5px;color:var(--ink-soft);font-weight:600;
+}
+table.ref td{border:1px solid var(--grid);padding:6px 10px;vertical-align:top}
+table.ref td:nth-child(2){font-family:"IBM Plex Mono",monospace;color:var(--green);white-space:nowrap}
+table.ref tr:hover td{background:#F7F9F8}
+
+/* callouts */
+.note{border-left:3px solid var(--green);background:var(--green-bg);padding:11px 15px;font-size:clamp(13px,1.05vw,15.5px)}
+.warn{border-left:3px solid var(--red);background:var(--red-bg);padding:11px 15px;font-size:clamp(13px,1.05vw,15.5px)}
+.warn b,.note b{font-weight:600}
+.card{background:#fff;border:1px solid var(--grid-strong);padding:clamp(12px,1.4vw,20px)}
+.card.good{border-top:3px solid var(--green)}
+.card.bad{border-top:3px solid var(--red)}
+.card h4{font-size:14px;font-weight:600;margin-bottom:8px}
+.card.good h4{color:var(--green)}
+.card.bad h4{color:var(--red)}
+.card p{font-size:13.5px;color:var(--ink-soft)}
+
+/* keys */
+.keys{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 22px}
+.key{display:flex;gap:12px;align-items:baseline;font-size:clamp(13px,1.05vw,15.5px)}
+.key kbd{
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px;
+  background:#fff;border:1px solid var(--grid-strong);
+  border-bottom-width:2px;padding:3px 7px;white-space:nowrap;flex:0 0 auto;min-width:118px;text-align:center;
+}
+.key span{color:var(--ink-soft)}
+
+/* cover */
+.cover{justify-content:center;gap:0}
+.cover .kicker{
+  font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink-faint);margin-bottom:18px;
+}
+.cover h1{margin-bottom:22px}
+.cover .sub{color:var(--ink-soft);font-size:clamp(15px,1.35vw,19px);max-width:52ch;margin-bottom:32px}
+.cover .f{max-width:760px}
+.hint{margin-top:26px;font-size:12.5px;color:var(--ink-faint)}
+.hint kbd{font-family:"IBM Plex Mono",monospace;background:#fff;border:1px solid var(--grid-strong);padding:1px 5px}
+
+.steps{display:flex;flex-direction:column;gap:7px}
+.step{display:flex;gap:12px;align-items:flex-start;font-size:clamp(13px,1.05vw,15.5px)}
+.step em{
+  font-style:normal;font-family:"IBM Plex Mono",monospace;
+  color:var(--green);font-size:12.5px;flex:0 0 22px;padding-top:2px;
+}
+.pieces{display:flex;flex-wrap:wrap;gap:8px}
+.piece{
+  font-family:"IBM Plex Mono",monospace;font-size:clamp(11.5px,1vw,14px);
+  background:#fff;border:1px solid var(--grid-strong);padding:6px 10px;
+}
+.piece.a{border-bottom:3px solid #0B5D3B}
+.piece.b{border-bottom:3px solid #B8860B}
+.piece.c{border-bottom:3px solid #2C5AA0}
+.legend{display:flex;flex-direction:column;gap:5px;font-size:13.5px;color:var(--ink-soft)}
+.legend i{font-style:normal;font-family:"IBM Plex Mono",monospace;color:var(--ink)}
+
+@media (max-width:820px){
+  .two,.three,.keys{grid-template-columns:1fr}
+  .cols,.rows,.addr{display:none}
+  .corner{display:none}
+  .slide{padding:20px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="topbar">
+    <div class="addr" id="addr">A1</div>
+    <div class="fx">fx</div>
+    <div class="fxline" id="fxline"></div>
+  </div>
+
+  <div class="cols" id="cols"><div class="corner"></div></div>
+
+  <div class="main">
+    <div class="rows" id="rows"></div>
+    <div class="canvas" id="canvas">
+
+<!-- ============ A. СТАРТ ============ -->
+<section class="slide cover" data-tab="0" data-addr="A1" data-fx="Разбор тестового задания + Excel с нуля">
+  <div class="kicker">Тестовое задание · финансовый специалист</div>
+  <h1>Четыре задачи, семь формул и всё, что стоит знать про Excel</h1>
+  <p class="sub">Разбираем тестовое по шагам: как собрать ФИО, сделать инициалы без лишних точек, посчитать перерасход бюджета и подтянуть суммы с соседнего листа. Дальше — база Excel, которая пригодится на самой работе.</p>
+  <div class="f"><div class="tag">fx</div><code>=SUMIFS(G:G;E:E;$B9;C:C;"Prior")</code></div>
+  <div class="hint">Листайте <kbd>→</kbd> и <kbd>←</kbd>, или кликайте по вкладкам листов внизу</div>
+</section>
+
+<section class="slide" data-tab="0" data-addr="A2" data-fx="Что проверяет это задание">
+  <h2>Что на самом деле проверяют</h2>
+  <p class="lede">Задачи выглядят разрозненно, но каждая закрывает свой навык. Работодатель смотрит не на «знаю функцию», а на «делаю таблицу, которую не страшно отдать бухгалтеру».</p>
+  <div class="body">
+    <table class="ref">
+      <thead><tr><th style="width:22%">Задача</th><th style="width:26%">Ключевая функция</th><th>Навык за ней</th></tr></thead>
+      <tbody>
+        <tr><td>1 — Полное ФИО</td><td>&amp; · CONCATENATE · TEXTJOIN</td><td>Склейка текста, понимание разницы между оператором и функцией</td></tr>
+        <tr><td>2 — Фамилия с инициалами</td><td>LEFT · IF · TRIM</td><td>Условная логика и защита от «грязных» данных</td></tr>
+        <tr><td>3 — Финансовый отчёт</td><td>SUM · арифметика · форматы</td><td>Бюджетная логика: экономия или перерасход</td></tr>
+        <tr><td>4 — Свод по листам</td><td>SUMIFS · условное форматирование</td><td>Кросс-табличные ссылки и визуальный контроль</td></tr>
+      </tbody>
+    </table>
+    <div class="note"><b>Главный критерий — протягиваемость.</b> Формула должна одинаково работать и в строке 9, и в строке 40, без ручных правок посередине таблицы.</div>
+  </div>
+</section>
+
+<!-- ============ B. ЗАДАНИЕ 1 ============ -->
+<section class="slide" data-tab="1" data-addr="B1" data-fx="Задание 1: условие">
+  <h2>Задание 1. Собрать полное ФИО</h2>
+  <p class="lede">Три отдельных столбца нужно объединить в одну ячейку в порядке «Прізвище Ім'я По-батькові».</p>
+  <div class="body two">
+    <div>
+      <table class="sheet">
+        <thead><tr><th></th><th>B</th><th>C</th><th>D</th><th>E</th></tr></thead>
+        <tbody>
+          <tr><th class="rh">5</th><td class="head">Ім'я</td><td class="head">Прізвище</td><td class="head">По-батькові</td><td class="head">Повне ПІБ</td></tr>
+          <tr><th class="rh">6</th><td>Олена</td><td>Ковальчук</td><td>Петрівна</td><td class="hl">?</td></tr>
+          <tr><th class="rh">7</th><td>Ігор</td><td>Мельник</td><td>Васильович</td><td class="hl">?</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>Что важно заметить до формулы</h3>
+      <ul>
+        <li>Порядок в ответе <b>не совпадает</b> с порядком столбцов: сначала C, потом B, потом D.</li>
+        <li>Между частями нужен ровно один пробел — его придётся добавлять вручную.</li>
+        <li>Данные вводили люди, значит где-то будет лишний пробел или пустая ячейка.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tab="1" data-addr="B2" data-fx="Три способа склеить текст">
+  <h2>Три решения: от школьного к рабочему</h2>
+  <div class="body">
+    <div>
+      <h3>Способ 1 — оператор конкатенации</h3>
+      <div class="f"><div class="tag">fx</div><code>=C6&amp;" "&amp;B6&amp;" "&amp;D6</code></div>
+      <div class="fnote">Самый короткий. Пробелы — это текст в кавычках, их приклеиваем вручную.</div>
+    </div>
+    <div>
+      <h3>Способ 2 — функция CONCATENATE</h3>
+      <div class="f"><div class="tag">fx</div><code>=CONCATENATE(C6;" ";B6;" ";D6)</code></div>
+      <div class="fnote">То же самое, но читается как список аргументов. Устаревшая, в новых версиях заменена на CONCAT.</div>
+    </div>
+    <div>
+      <h3>Способ 3 — TEXTJOIN, лучший вариант</h3>
+      <div class="f"><div class="tag">fx</div><code>=TEXTJOIN(" ";TRUE;C6;B6;D6)</code></div>
+      <div class="fnote">Разделитель задаётся один раз, а <b>TRUE</b> означает «пропускать пустые ячейки» — двойных пробелов не будет.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tab="1" data-addr="B3" data-fx="Когда что выбирать">
+  <h2>Почему <code class="k">&amp;</code> — это не функция</h2>
+  <p class="lede">Амперсанд — оператор, такой же как <code class="k">+</code> или <code class="k">*</code>. У него нет скобок и аргументов, он просто ставит один кусок текста за другим.</p>
+  <div class="body">
+    <div class="three">
+      <div class="card"><h4>&amp; — для двух-трёх кусков</h4><p>Быстро набрать, легко прочитать. На пяти и более частях превращается в частокол кавычек.</p></div>
+      <div class="card"><h4>CONCATENATE — для совместимости</h4><p>Понимают все версии Excel и Google Таблицы. Пустые ячейки не фильтрует.</p></div>
+      <div class="card good"><h4>TEXTJOIN — для реальных данных</h4><p>Один разделитель на всю формулу плюс автоматический пропуск пустых. Excel 2019 и новее.</p></div>
+    </div>
+    <div class="warn"><b>Частая ошибка:</b> склейка через <code class="k">+</code> вместо <code class="k">&amp;</code>. Excel попробует сложить текст как числа и вернёт <code class="k">#VALUE!</code>.</div>
+  </div>
+</section>
+
+<!-- ============ C. ЗАДАНИЕ 2 ============ -->
+<section class="slide" data-tab="2" data-addr="C1" data-fx="Задание 2: условие и подводный камень">
+  <h2>Задание 2. Фамилия с инициалами</h2>
+  <p class="lede">Нужен формат «Прізвище І.П.». Условие с подвохом: если имени или отчества нет, лишних точек и пробелов быть не должно.</p>
+  <div class="body two">
+    <div class="card bad">
+      <h4>Наивное решение</h4>
+      <div class="f bad"><div class="tag">fx</div><code>=C6&amp;" "&amp;LEFT(B6;1)&amp;"."&amp;LEFT(D6;1)&amp;"."</code></div>
+      <p style="margin-top:10px">На строке без отчества получится <span class="m">Мельник І..</span> — две точки подряд. На пустом имени — <span class="m">Мельник .В.</span></p>
+    </div>
+    <div class="card good">
+      <h4>Что должно получиться</h4>
+      <table class="sheet" style="width:100%">
+        <tbody>
+          <tr><td>Ковальчук О.П.</td><td style="color:var(--ink-faint)">все поля заполнены</td></tr>
+          <tr><td>Мельник І.</td><td style="color:var(--ink-faint)">нет отчества</td></tr>
+          <tr><td>Шевченко</td><td style="color:var(--ink-faint)">только фамилия</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:10px">Ни одного «висящего» пробела или знака препинания.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tab="2" data-addr="C2" data-fx="Формула с защитой от пустых ячеек">
+  <h2>Рабочая формула</h2>
+  <div class="body">
+    <div class="f"><div class="tag">fx</div><code>=TRIM(C6)&amp;IF(B6="";"";" "&amp;LEFT(TRIM(B6);1)&amp;".")&amp;IF(D6="";"";LEFT(TRIM(D6);1)&amp;".")</code></div>
+    <div>
+      <h3>Из чего она собрана</h3>
+      <div class="pieces">
+        <div class="piece a">TRIM(C6)</div>
+        <div class="piece b">&amp; IF(B6="";"";" "&amp;LEFT(TRIM(B6);1)&amp;".")</div>
+        <div class="piece c">&amp; IF(D6="";"";LEFT(TRIM(D6);1)&amp;".")</div>
+      </div>
+    </div>
+    <div class="legend">
+      <div><i>Блок 1</i> — фамилия, всегда есть, поэтому без условия.</div>
+      <div><i>Блок 2</i> — инициал имени. Пробел спрятан <b>внутрь</b> условия: нет имени — нет и пробела.</div>
+      <div><i>Блок 3</i> — инициал отчества. Пробела нет вообще: между «І.» и «П.» он не нужен.</div>
+    </div>
+    <div class="note">Ключевой приём — <b>прятать разделитель внутрь IF</b>, а не ставить его между блоками. Тогда пустое поле исчезает бесследно.</div>
+  </div>
+</section>
+
+<section class="slide" data-tab="2" data-addr="C3" data-fx="LEFT, IF и TRIM по отдельности">
+  <h2>Три функции, которые всё это держат</h2>
+  <div class="body">
+    <div class="three">
+      <div class="card">
+        <h4>LEFT(текст; 1)</h4>
+        <p>Берёт заданное число символов слева. <span class="m">LEFT("Олена";1)</span> → <span class="m">О</span>. Есть зеркальная RIGHT и серединная MID.</p>
+      </div>
+      <div class="card">
+        <h4>IF(условие; да; нет)</h4>
+        <p>Проверка <span class="m">B6=""</span> означает «ячейка пустая». Вторым аргументом идёт пустая строка <span class="m">""</span> — то есть «не добавляй ничего».</p>
+      </div>
+      <div class="card">
+        <h4>TRIM(текст)</h4>
+        <p>Срезает пробелы по краям и лишние внутри. Без него <span class="m">" Ігор"</span> даст инициал в виде пробела, и вы этого даже не увидите.</p>
+      </div>
+    </div>
+    <div class="warn"><b>Частая ошибка:</b> писать <code class="k">IF(B6=" ";…)</code> с пробелом в кавычках. Это проверка «в ячейке лежит пробел», а не «ячейка пуста» — условие не сработает.</div>
+  </div>
+</section>
+
+<!-- ============ D. ЗАДАНИЕ 3 ============ -->
+<section class="slide" data-tab="3" data-addr="D1" data-fx="Задание 3: финансовый отчёт">
+  <h2>Задание 3. Три расчётных столбца</h2>
+  <p class="lede">Есть бюджет и два периода расходов. Нужно посчитать итог, отклонение от бюджета и то же отклонение в процентах.</p>
+  <div class="body">
+    <table class="sheet" style="width:100%">
+      <thead><tr><th></th><th>B</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th></tr></thead>
+      <tbody>
+        <tr><th class="rh">8</th><td class="head">Budget Line</td><td class="head">Original Budget</td><td class="head">Prior</td><td class="head">Current</td><td class="head">Total Expenditure</td><td class="head">(Over)/Under</td><td class="head">%</td></tr>
+        <tr><th class="rh">9</th><td>1.1 Персонал</td><td class="num">480 000</td><td class="num">210 000</td><td class="num">195 000</td><td class="num hl">405 000</td><td class="num pos">75 000</td><td class="num pos">15,6%</td></tr>
+        <tr><th class="rh">10</th><td>1.2 Логістика</td><td class="num">120 000</td><td class="num">78 000</td><td class="num">61 000</td><td class="num hl">139 000</td><td class="num neg">−19 000</td><td class="num neg">−15,8%</td></tr>
+      </tbody>
+    </table>
+    <div class="two">
+      <div>
+        <h3>Формулы</h3>
+        <div class="f"><div class="tag">fx</div><code>=SUM(E9;F9)</code></div>
+        <div class="fnote">Total Expenditure. Равнозначно <span class="m">=E9+F9</span>, но SUM спокойнее переживает пустые ячейки и текст.</div>
+      </div>
+      <div>
+        <h3>&nbsp;</h3>
+        <div class="f"><div class="tag">fx</div><code>=D9-G9</code></div>
+        <div class="fnote">(Over)/Under Budget: бюджет минус фактические расходы.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tab="3" data-addr="D2" data-fx="Проценты, знаки и форматы">
+  <h2>Знак числа здесь важнее самого числа</h2>
+  <div class="body">
+    <div class="two">
+      <div>
+        <div class="f"><div class="tag">fx</div><code>=H9/D9</code></div>
+        <div class="fnote">Процент отклонения. Формат ячейки — Percentage, вручную умножать на 100 не нужно.</div>
+        <div class="note" style="margin-top:16px">
+          <b>Плюс — это экономия</b>, потратили меньше бюджета.<br>
+          <b>Минус — это перерасход</b>, вышли за рамки. Именно поэтому в названии столбца «(Over)» стоит в скобках: в бухгалтерской традиции скобки означают отрицательное значение.
+        </div>
+      </div>
+      <div>
+        <h3>Форматы, без которых отчёт выглядит сырым</h3>
+        <ul>
+          <li><b>Проценты:</b> Формат ячеек → Числовой → Процентный, один знак после запятой → <span class="m">0.0%</span></li>
+          <li><b>Гривна:</b> пользовательский формат <span class="m">#,##0</span> — разделитель тысяч, без копеек.</li>
+          <li><b>Отрицательные в скобках:</b> <span class="m">#,##0;(#,##0)</span> — точка с запятой отделяет формат для минусовых значений.</li>
+        </ul>
+        <div class="warn" style="margin-top:14px"><b>Проверьте деление на ноль.</b> Если строка бюджета пустая, <span class="m">=H9/D9</span> вернёт <code class="k">#DIV/0!</code> и испортит весь столбец.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ E. ЗАДАНИЕ 4 ============ -->
+<section class="slide" data-tab="4" data-addr="E1" data-fx="Задание 4: SUMIFS между листами">
+  <h2>Задание 4. Подтянуть суммы с другого листа</h2>
+  <p class="lede">Данные лежат построчно на вспомогательном листе: код статьи, период, сумма. Нужно свернуть их в отчёт — по коду и по периоду одновременно.</p>
+  <div class="body two">
+    <div>
+      <h3>Как выглядит источник</h3>
+      <table class="sheet">
+        <thead><tr><th></th><th>C</th><th>E</th><th>G</th></tr></thead>
+        <tbody>
+          <tr><th class="rh">1</th><td class="head">Період</td><td class="head">Код</td><td class="head">Сума</td></tr>
+          <tr><th class="rh">2</th><td>Prior</td><td>1.1</td><td class="num">120 000</td></tr>
+          <tr><th class="rh">3</th><td>Current</td><td>1.1</td><td class="num">195 000</td></tr>
+          <tr><th class="rh">4</th><td>Prior</td><td>1.1</td><td class="num">90 000</td></tr>
+          <tr><th class="rh">5</th><td>Prior</td><td>1.2</td><td class="num">78 000</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:10px;font-size:13px;color:var(--ink-soft)">Одна статья встречается несколько раз — вручную это не сложить.</p>
+    </div>
+    <div>
+      <h3>Синтаксис SUMIFS</h3>
+      <div class="f"><div class="tag">fx</div><code>=SUMIFS(
+  диапазон_суммы;
+  диапазон_условия_1; условие_1;
+  диапазон_условия_2; условие_2; …)</code></div>
+      <ul style="margin-top:14px">
+        <li>Диапазон суммы идёт <b>первым</b> — в отличие от SUMIF, где он последний.</li>
+        <li>Условия работают по «И»: строка попадёт в сумму, только если совпали оба.</li>
+        <li>Все диапазоны должны быть одной высоты.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tab="4" data-addr="E2" data-fx="Две формулы: Prior и Current">
+  <h2>Две формулы, разница в одном слове</h2>
+  <div class="body">
+    <div>
+      <h3>Prior — расходы прошлого периода</h3>
+      <div class="f"><div class="tag">fx</div><code>=SUMIFS(Допоміжна_Таблиця_для_Завдання_!$G:$G;Допоміжна_Таблиця_для_Завдання_!$E:$E;$B9;Допоміжна_Таблиця_для_Завдання_!$C:$C;"Prior")</code></div>
+    </div>
+    <div>
+      <h3>Current — текущий период</h3>
+      <div class="f"><div class="tag">fx</div><code>=SUMIFS(Допоміжна_Таблиця_для_Завдання_!$G:$G;Допоміжна_Таблиця_для_Завдання_!$E:$E;$B9;Допоміжна_Таблиця_для_Завдання_!$C:$C;"Current")</code></div>
+    </div>
+    <div class="note"><b>Восклицательный знак разделяет лист и диапазон.</b> Если в имени листа есть пробелы, Excel сам обернёт его в апострофы: <span class="m">'Допоміжна таблиця'!$G:$G</span>. Проще всего не набирать имя руками, а перейти на нужный лист мышью прямо во время ввода формулы.</div>
+    <div class="warn"><b>Частая ошибка:</b> текстовое условие без кавычек. <code class="k">Prior</code> Excel примет за имя диапазона и вернёт ноль без всякой ошибки — самый опасный сценарий, потому что таблица выглядит рабочей.</div>
+  </div>
+</section>
+
+<section class="slide" data-tab="4" data-addr="E3" data-fx="Абсолютные и относительные ссылки">
+  <h2>Зачем здесь столько знаков <code class="k">$</code></h2>
+  <p class="lede">Формула пишется один раз в строке 9 и протягивается вниз на все статьи бюджета. Знак доллара решает, что при этом «поедет», а что останется на месте.</p>
+  <div class="body">
+    <div class="two">
+      <div class="card good">
+        <h4>Что зафиксировано</h4>
+        <ul>
+          <li><span class="m">$G:$G</span>, <span class="m">$E:$E</span>, <span class="m">$C:$C</span> — диапазоны на вспомогательном листе всегда одни и те же.</li>
+          <li><span class="m">$B9</span> — столбец B закреплён, номер строки свободен. Тянем вниз — берётся код из B10, B11.</li>
+        </ul>
+      </div>
+      <div class="card bad">
+        <h4>Что будет без доллара</h4>
+        <p>При протягивании на 5 строк вниз диапазон <span class="m">G:G</span> уедет в <span class="m">G5:G1048576</span>, часть данных выпадет из расчёта, и суммы тихо занизятся.</p>
+      </div>
+    </div>
+    <table class="ref">
+      <thead><tr><th style="width:16%">Запись</th><th style="width:22%">Тип</th><th>Что происходит при протягивании</th></tr></thead>
+      <tbody>
+        <tr><td>A1</td><td>Относительная</td><td>Меняются и столбец, и строка</td></tr>
+        <tr><td>$A$1</td><td>Абсолютная</td><td>Не меняется ничего</td></tr>
+        <tr><td>$A1</td><td>Смешанная</td><td>Столбец закреплён, строка едет — наш случай с <span class="m">$B9</span></td></tr>
+        <tr><td>A$1</td><td>Смешанная</td><td>Строка закреплена, столбец едет</td></tr>
+      </tbody>
+    </table>
+    <div class="note">Не набирайте доллары вручную: поставьте курсор на ссылку в формуле и жмите <b>F4</b> — Excel переберёт все четыре варианта по кругу.</div>
+  </div>
+</section>
+
+<section class="slide" data-tab="4" data-addr="E4" data-fx="Условное форматирование: перерасход красным">
+  <h2>Подсветить перерасход красным</h2>
+  <p class="lede">Финальный штрих задания: отрицательные значения в столбце отклонений должны бросаться в глаза.</p>
+  <div class="body two">
+    <div>
+      <h3>Способ через готовое правило</h3>
+      <div class="steps">
+        <div class="step"><em>1</em><span>Выделите диапазон столбца <b>(Over)/Under Budget</b> — например <span class="m">H9:H40</span>.</span></div>
+        <div class="step"><em>2</em><span>Главная → Условное форматирование → Правила выделения ячеек → <b>Меньше…</b></span></div>
+        <div class="step"><em>3</em><span>Впишите <span class="m">0</span> и выберите красную заливку со шрифтом.</span></div>
+      </div>
+      <h3 style="margin-top:20px">Способ через формулу</h3>
+      <p style="font-size:14px;color:var(--ink-soft);margin-bottom:8px">Создать правило → Использовать формулу для определения форматируемых ячеек:</p>
+      <div class="f"><div class="tag">fx</div><code>=H9&lt;0</code></div>
+      <div class="fnote">Ссылка относительная и указывает на <b>верхнюю левую</b> ячейку выделения — тогда правило само пересчитается для каждой строки.</div>
+    </div>
+    <div>
+      <h3>Результат</h3>
+      <table class="sheet" style="width:100%">
+        <thead><tr><th></th><th>B</th><th>H</th><th>I</th></tr></thead>
+        <tbody>
+          <tr><th class="rh">9</th><td>1.1 Персонал</td><td class="num pos">75 000</td><td class="num pos">15,6%</td></tr>
+          <tr><th class="rh">10</th><td>1.2 Логістика</td><td class="num neg">−19 000</td><td class="num neg">−15,8%</td></tr>
+          <tr><th class="rh">11</th><td>1.3 Обладнання</td><td class="num pos">4 200</td><td class="num pos">2,1%</td></tr>
+          <tr><th class="rh">12</th><td>2.1 Оренда</td><td class="num neg">−63 500</td><td class="num neg">−28,9%</td></tr>
+        </tbody>
+      </table>
+      <div class="note" style="margin-top:16px">Формулой правило гибче: можно красить <b>всю строку</b>, а не одну ячейку. Для этого в формуле закрепите столбец — <span class="m">=$H9&lt;0</span> — и выделите диапазон по всем колонкам.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ F. ШПАРГАЛКА ============ -->
+<section class="slide" data-tab="5" data-addr="F1" data-fx="Шпаргалка по всему заданию">
+  <h2>Все формулы задания на одной странице</h2>
+  <div class="body">
+    <table class="ref">
+      <thead><tr><th style="width:20%">Задача</th><th style="width:42%">Формула</th><th>Что делает</th></tr></thead>
+      <tbody>
+        <tr><td>Полное ФИО</td><td>=TEXTJOIN(" ";TRUE;C6;B6;D6)</td><td>Склеивает через пробел, пропуская пустые</td></tr>
+        <tr><td>Полное ФИО, вариант</td><td>=C6&amp;" "&amp;B6&amp;" "&amp;D6</td><td>То же самое через оператор конкатенации</td></tr>
+        <tr><td>Инициалы</td><td>=TRIM(C6)&amp;IF(B6="";"";" "&amp;LEFT(TRIM(B6);1)&amp;".")&amp;IF(D6="";"";LEFT(TRIM(D6);1)&amp;".")</td><td>Фамилия и инициалы без лишних точек и пробелов</td></tr>
+        <tr><td>Total Expenditure</td><td>=SUM(E9;F9)</td><td>Сумма расходов за оба периода</td></tr>
+        <tr><td>(Over)/Under Budget</td><td>=D9-G9</td><td>Бюджет минус факт: плюс — экономия, минус — перерасход</td></tr>
+        <tr><td>Отклонение, %</td><td>=H9/D9</td><td>Доля отклонения от бюджета, формат Percentage</td></tr>
+        <tr><td>Свод, Prior</td><td>=SUMIFS(Лист!$G:$G;Лист!$E:$E;$B9;Лист!$C:$C;"Prior")</td><td>Сумма по коду статьи за прошлый период</td></tr>
+        <tr><td>Свод, Current</td><td>=SUMIFS(Лист!$G:$G;Лист!$E:$E;$B9;Лист!$C:$C;"Current")</td><td>То же за текущий период</td></tr>
+        <tr><td>Подсветка</td><td>=H9&lt;0</td><td>Правило условного форматирования для перерасхода</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:12.5px;color:var(--ink-faint)">Имя листа сокращено до «Лист» для читаемости — в файле подставьте <span class="m">Допоміжна_Таблиця_для_Завдання_</span>.</p>
+  </div>
+</section>
+
+<!-- ============ G. БАЗА ============ -->
+<section class="slide" data-tab="6" data-addr="G1" data-fx="Excel с нуля: как устроен файл">
+  <h2>Из чего состоит Excel</h2>
+  <p class="lede">Дальше — база, которая пригодится уже на работе, а не в тестовом. Начнём с географии файла.</p>
+  <div class="body two">
+    <div>
+      <ul>
+        <li><b>Книга</b> — сам файл <span class="m">.xlsx</span>.</li>
+        <li><b>Лист</b> — одна вкладка внизу окна. В одной книге их может быть сколько угодно.</li>
+        <li><b>Столбец</b> — буква сверху, <b>строка</b> — число слева.</li>
+        <li><b>Ячейка</b> — их пересечение: <span class="m">C6</span> это столбец C, строка 6.</li>
+        <li><b>Диапазон</b> — прямоугольник от угла до угла: <span class="m">A1:B10</span>. Целый столбец пишется <span class="m">G:G</span>.</li>
+        <li><b>Ссылка на другой лист</b> — имя, восклицательный знак, адрес: <span class="m">Лист2!A1</span>.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Значение или формула</h3>
+      <p style="margin-bottom:12px">Ячейка хранит одно из двух. Всё, что начинается со знака <code class="k">=</code>, Excel считает формулой и вычисляет. Всё остальное — просто данные.</p>
+      <div class="f"><div class="tag">fx</div><code>405000        значение
+=E9+F9        формула</code></div>
+      <div class="note" style="margin-top:14px"><b>Автозаполнение.</b> Наведите курсор на правый нижний угол ячейки — появится крестик. Потяните вниз, и формула скопируется на весь диапазон. Двойной клик по крестику дотянет её до конца соседней заполненной колонки.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tab="6" data-addr="G2" data-fx="Что видно в строке формул">
+  <h2>Читать чужую таблицу</h2>
+  <p class="lede">На новой работе вам чаще достанется готовый файл, чем чистый лист. Четыре приёма, чтобы разобраться в нём за пять минут.</p>
+  <div class="body">
+    <div class="two">
+      <div class="card">
+        <h4>Показать все формулы разом</h4>
+        <p>Нажмите <code class="k">Ctrl + ~</code> — вместо чисел лист покажет формулы. Сразу видно, где кто-то вбил число руками посреди расчётной колонки.</p>
+      </div>
+      <div class="card">
+        <h4>Найти, откуда берутся данные</h4>
+        <p>Формулы → Влияющие ячейки. Excel нарисует стрелки к источникам, в том числе на других листах.</p>
+      </div>
+      <div class="card">
+        <h4>Проверить формулу по шагам</h4>
+        <p>Формулы → Вычислить формулу. Кнопка «Вычислить» разворачивает выражение по одному действию — незаменимо для длинных вложенных IF.</p>
+      </div>
+      <div class="card">
+        <h4>Понять размер листа</h4>
+        <p><code class="k">Ctrl + End</code> прыгает в последнюю заполненную ячейку. Если она где-то в строке 40 000 — в файле мусор, который раздувает размер.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ H. ФУНКЦИИ ============ -->
+<section class="slide" data-tab="7" data-addr="H1" data-fx="Логика и суммирование по условиям">
+  <h2>Логика и условные суммы</h2>
+  <div class="body two">
+    <div>
+      <h3>Логика</h3>
+      <table class="ref">
+        <tbody>
+          <tr><td>Проверка</td><td>IF(условие;да;нет)</td></tr>
+          <tr><td>Несколько проверок</td><td>IFS(усл1;знач1;усл2;знач2)</td></tr>
+          <tr><td>Оба условия</td><td>AND(A1&gt;0;B1&gt;0)</td></tr>
+          <tr><td>Хотя бы одно</td><td>OR(A1&gt;0;B1&gt;0)</td></tr>
+          <tr><td>Гасим ошибку</td><td>IFERROR(формула;"")</td></tr>
+        </tbody>
+      </table>
+      <div class="note" style="margin-top:14px">IFS избавляет от матрёшки из вложенных IF. Условия проверяются сверху вниз, побеждает первое подошедшее.</div>
+    </div>
+    <div>
+      <h3>Суммирование и подсчёт</h3>
+      <table class="ref">
+        <tbody>
+          <tr><td>Одно условие</td><td>SUMIF(диапазон;условие;диапазон_суммы)</td></tr>
+          <tr><td>Несколько условий</td><td>SUMIFS(сумма;диап1;усл1;…)</td></tr>
+          <tr><td>Сколько раз встречается</td><td>COUNTIF(диапазон;условие)</td></tr>
+          <tr><td>Считаем по условиям</td><td>COUNTIFS(диап1;усл1;…)</td></tr>
+          <tr><td>Среднее по условиям</td><td>AVERAGEIFS(среднее;диап1;усл1;…)</td></tr>
+        </tbody>
+      </table>
+      <div class="warn" style="margin-top:14px"><b>Порядок аргументов у SUMIF и SUMIFS разный.</b> У SUMIF диапазон суммы идёт последним, у SUMIFS — первым. Это источник половины ошибок.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tab="7" data-addr="H2" data-fx="Поиск данных: VLOOKUP против INDEX+MATCH">
+  <h2>Найти значение в другой таблице</h2>
+  <div class="body">
+    <div class="two">
+      <div>
+        <h3>VLOOKUP — привычный</h3>
+        <div class="f"><div class="tag">fx</div><code>=VLOOKUP(B9;Дані!$A:$D;4;0)</code></div>
+        <div class="fnote">Ищет B9 в первом столбце диапазона и возвращает значение из 4-го. Последний <span class="m">0</span> — точное совпадение, его нельзя забывать.</div>
+      </div>
+      <div>
+        <h3>INDEX + MATCH — надёжный</h3>
+        <div class="f"><div class="tag">fx</div><code>=INDEX(Дані!$D:$D;MATCH(B9;Дані!$A:$A;0))</code></div>
+        <div class="fnote">MATCH находит <b>номер строки</b>, INDEX по этому номеру достаёт значение из нужного столбца.</div>
+      </div>
+    </div>
+    <table class="ref">
+      <thead><tr><th style="width:34%">Ситуация</th><th style="width:22%">VLOOKUP</th><th>INDEX + MATCH</th></tr></thead>
+      <tbody>
+        <tr><td>Искомый столбец левее ключа</td><td>Не умеет</td><td>Работает</td></tr>
+        <tr><td>В таблицу вставили столбец</td><td>Ломается: номер 4 указывает уже не туда</td><td>Работает: ссылка на столбец живая</td></tr>
+        <tr><td>Таблица на 50 000 строк</td><td>Медленнее</td><td>Быстрее, читается только два столбца</td></tr>
+        <tr><td>Читаемость для новичка</td><td>Проще</td><td>Нужно привыкнуть</td></tr>
+      </tbody>
+    </table>
+    <div class="note">В Excel 365 появилась <b>XLOOKUP</b> — умеет искать в любую сторону одной функцией. Но в файлах, которые ходят между организациями, безопаснее INDEX+MATCH: он откроется везде.</div>
+  </div>
+</section>
+
+<section class="slide" data-tab="7" data-addr="H3" data-fx="Текст, даты и округление">
+  <h2>Текст, даты, округление</h2>
+  <div class="body three">
+    <div>
+      <h3>Текст</h3>
+      <table class="ref">
+        <tbody>
+          <tr><td>Слева</td><td>LEFT</td></tr>
+          <tr><td>Справа</td><td>RIGHT</td></tr>
+          <tr><td>Из середины</td><td>MID</td></tr>
+          <tr><td>Длина</td><td>LEN</td></tr>
+          <tr><td>Убрать пробелы</td><td>TRIM</td></tr>
+          <tr><td>Регистр</td><td>UPPER LOWER PROPER</td></tr>
+          <tr><td>Склеить списком</td><td>TEXTJOIN</td></tr>
+          <tr><td>Замена подстроки</td><td>SUBSTITUTE</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>Даты</h3>
+      <table class="ref">
+        <tbody>
+          <tr><td>Сегодня</td><td>TODAY()</td></tr>
+          <tr><td>Конец месяца</td><td>EOMONTH</td></tr>
+          <tr><td>Разница дат</td><td>DATEDIF</td></tr>
+          <tr><td>Части даты</td><td>YEAR MONTH DAY</td></tr>
+          <tr><td>Рабочие дни</td><td>NETWORKDAYS</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:13px;color:var(--ink-soft);margin-top:10px">Дата в Excel — это число дней с 1 января 1900 года. Поэтому даты можно вычитать: <span class="m">=B2-A2</span> даст количество дней.</p>
+    </div>
+    <div>
+      <h3>Округление</h3>
+      <table class="ref">
+        <tbody>
+          <tr><td>По правилам</td><td>ROUND(число;2)</td></tr>
+          <tr><td>Всегда вверх</td><td>ROUNDUP</td></tr>
+          <tr><td>Всегда вниз</td><td>ROUNDDOWN</td></tr>
+        </tbody>
+      </table>
+      <div class="warn" style="margin-top:12px"><b>Формат ≠ округление.</b> Если показать 2 знака после запятой, в ячейке всё равно останется полное число, и сумма колонки не сойдётся с тем, что видно глазами.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ I. СКОРОСТЬ ============ -->
+<section class="slide" data-tab="8" data-addr="I1" data-fx="Умные таблицы и сводные">
+  <h2>Когда строк становится тысяча</h2>
+  <div class="body two">
+    <div>
+      <div class="card" style="margin-bottom:14px">
+        <h4>Умные таблицы — Ctrl+T</h4>
+        <p>Диапазон превращается в объект, который сам растёт при добавлении строк. Формулы копируются автоматически, а ссылки читаются по-человечески: <span class="m">=SUM(Таблица1[Сума])</span> вместо <span class="m">=SUM(G2:G874)</span>.</p>
+      </div>
+      <div class="card">
+        <h4>Сводные таблицы</h4>
+        <p>Вставка → Сводная таблица. Перетащите «Статью бюджета» в строки, «Период» в столбцы, «Сумму» в значения — и тысяча строк свернётся в готовый отчёт. Четыре движения мышью вместо десятка SUMIFS.</p>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:14px">
+        <h4>Закрепить области</h4>
+        <p>Вид → Закрепить области. Шапка таблицы останется на экране при прокрутке — на длинном бюджете это экономит нервы больше, чем любая формула.</p>
+      </div>
+      <div class="card">
+        <h4>Проверка данных</h4>
+        <p>Данные → Проверка данных → Список. Задайте значения <span class="m">Prior;Current</span> — и в колонке появится выпадающий список. Опечатка «Prio» больше не сломает ваш SUMIFS.</p>
+      </div>
+      <div class="note" style="margin-top:14px">Сводная таблица не обновляется сама. После правки данных — правый клик → Обновить.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-tab="8" data-addr="I2" data-fx="Горячие клавиши">
+  <h2>Восемь сочетаний, которые окупятся в первый же день</h2>
+  <div class="body">
+    <div class="keys">
+      <div class="key"><kbd>Ctrl + Shift + ↓</kbd><span>Выделить всё до конца диапазона</span></div>
+      <div class="key"><kbd>Ctrl + Пробел</kbd><span>Выделить весь столбец</span></div>
+      <div class="key"><kbd>Shift + Пробел</kbd><span>Выделить всю строку</span></div>
+      <div class="key"><kbd>F4</kbd><span>Закрепить ссылку или повторить последнее действие</span></div>
+      <div class="key"><kbd>Ctrl + ~</kbd><span>Показать формулы вместо значений</span></div>
+      <div class="key"><kbd>Ctrl + Alt + V</kbd><span>Специальная вставка: только значения, только формулы, транспонировать</span></div>
+      <div class="key"><kbd>Ctrl + E</kbd><span>Мгновенное заполнение по образцу</span></div>
+      <div class="key"><kbd>Alt + =</kbd><span>Автосумма по столбцу выше</span></div>
+    </div>
+    <div class="note"><b>Ctrl+E пригодился бы в Задании 2.</b> Наберите вручную «Ковальчук О.П.» в первой строке, нажмите Ctrl+E — Excel угадает шаблон и заполнит остальные. Но результат будет текстом, а не формулой: при изменении исходных данных он не пересчитается. В тестовом нужна именно формула.</div>
+    <div class="note">Именованные диапазоны: Формулы → Диспетчер имён. После этого <span class="m">=SUM(Бюджет)</span> вместо <span class="m">=SUM(D9:D40)</span> — формулу можно прочитать вслух и понять.</div>
+  </div>
+</section>
+
+<!-- ============ J. ИТОГ ============ -->
+<section class="slide" data-tab="9" data-addr="J1" data-fx="Как не наделать ошибок в финансовой модели">
+  <h2>Пять правил живой финмодели</h2>
+  <p class="lede">Отличие рабочего файла от красивого — в том, что через полгода в нём можно поменять одну цифру и получить верный результат.</p>
+  <div class="body">
+    <div class="steps">
+      <div class="step"><em>1</em><span><b>Никаких чисел внутри формул.</b> <span class="m">=D9*1.2</span> — мина замедленного действия. Вынесите 20% в отдельную ячейку с подписью и ссылайтесь на неё.</span></div>
+      <div class="step"><em>2</em><span><b>Оборачивайте риск в IFERROR.</b> Особенно деление и поиск: <span class="m">=IFERROR(VLOOKUP(…);"немає даних")</span>.</span></div>
+      <div class="step"><em>3</em><span><b>Ловите деление на ноль явно.</b> <span class="m">=IF(D9=0;0;H9/D9)</span> честнее, чем спрятать <code class="k">#DIV/0!</code> под IFERROR: вы видите, что бюджет пустой.</span></div>
+      <div class="step"><em>4</em><span><b>Одна формула на всю колонку.</b> Одно исправление руками посреди таблицы — и никто, включая вас, этого потом не найдёт.</span></div>
+      <div class="step"><em>5</em><span><b>Проверяйте перед отправкой.</b> <code class="k">Ctrl + ~</code>, пробегитесь глазами по колонкам: везде ли формулы, нет ли вбитых значений, не съехали ли диапазоны.</span></div>
+    </div>
+    <div class="warn"><b>Отдельно про итоги.</b> <span class="m">=SUM(D9:D40)</span> с запасом в пару пустых строк внизу — хорошая привычка: новую статью бюджета допишут внутрь диапазона, а не за его границей.</div>
+  </div>
+</section>
+
+<section class="slide" data-tab="9" data-addr="J2" data-fx="Итог и практика">
+  <h2>Что осталось в сухом остатке</h2>
+  <div class="body two">
+    <div>
+      <h3>Пять функций, которые финансист открывает каждый день</h3>
+      <ul>
+        <li><b>SUMIFS</b> — свод по статьям и периодам</li>
+        <li><b>IF</b> — любая условная логика</li>
+        <li><b>IFERROR</b> — чтобы отчёт не краснел от ошибок</li>
+        <li><b>INDEX + MATCH</b> — подтянуть данные из справочника</li>
+        <li><b>TEXTJOIN</b> — собрать текст из кусков</li>
+      </ul>
+      <div class="note" style="margin-top:16px">Остальное подскажет сам Excel: начните набирать <span class="m">=SUM</span> и нажмите Tab — подсказка по аргументам появится прямо под ячейкой.</div>
+    </div>
+    <div>
+      <h3>Проверьте себя</h3>
+      <div class="card" style="margin-bottom:12px">
+        <p style="color:var(--ink)"><b>Задача.</b> На вспомогательном листе посчитайте сумму по статье <span class="m">1.1</span> за период <span class="m">Current</span> — но только строки, где сумма больше 50 000.</p>
+        <p style="margin-top:8px;color:var(--ink-soft)">Подсказка: SUMIFS принимает третье условие, а знак сравнения пишется в кавычках — <span class="m">"&gt;50000"</span>.</p>
+      </div>
+      <div class="card">
+        <h4>Куда идти дальше</h4>
+        <p>Сводные таблицы и Power Query — следующий уровень для тех же задач: то, что здесь решается десятком SUMIFS, там делается одним обновлением источника.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+    </div><!-- /canvas -->
+  </div><!-- /main -->
+
+  <div class="tabs" id="tabs"></div>
+  <div class="progress" id="progress"></div>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var tabNames = ['Старт','Задание 1','Задание 2','Задание 3','Задание 4','Шпаргалка','База','Функции','Скорость','Итог'];
+  var i = 0;
+
+  // column letters + row numbers
+  var cols = document.getElementById('cols');
+  'ABCDEFGHIJKLMNOP'.split('').forEach(function(L){
+    var s = document.createElement('span'); s.textContent = L; cols.appendChild(s);
+  });
+  var rows = document.getElementById('rows');
+  for (var r = 1; r <= 18; r++){
+    var s = document.createElement('span'); s.textContent = r; rows.appendChild(s);
+  }
+
+  // sheet tabs
+  var tabsEl = document.getElementById('tabs');
+  tabNames.forEach(function(name, idx){
+    var b = document.createElement('button');
+    b.className = 'tab'; b.textContent = name;
+    b.addEventListener('click', function(){
+      var first = slides.findIndex(function(sl){ return +sl.dataset.tab === idx; });
+      if (first > -1) go(first);
+    });
+    tabsEl.appendChild(b);
+  });
+  var sp = document.createElement('div'); sp.className = 'spacer'; tabsEl.appendChild(sp);
+  var count = document.createElement('div'); count.className = 'count'; tabsEl.appendChild(count);
+  var nav = document.createElement('div'); nav.className = 'nav';
+  var prevB = document.createElement('button'); prevB.textContent = '◀'; prevB.title = 'Назад';
+  var nextB = document.createElement('button'); nextB.textContent = '▶'; nextB.title = 'Вперёд';
+  prevB.addEventListener('click', function(){ go(i-1); });
+  nextB.addEventListener('click', function(){ go(i+1); });
+  nav.appendChild(prevB); nav.appendChild(nextB); tabsEl.appendChild(nav);
+
+  function go(n){
+    if (n < 0 || n >= slides.length) return;
+    slides[i].classList.remove('on');
+    i = n;
+    slides[i].classList.add('on');
+    document.getElementById('addr').textContent = slides[i].dataset.addr || '';
+    document.getElementById('fxline').textContent = slides[i].dataset.fx || '';
+    document.getElementById('progress').style.width = ((i+1)/slides.length*100) + '%';
+    count.textContent = (i+1) + ' / ' + slides.length;
+    var t = +slides[i].dataset.tab;
+    Array.prototype.forEach.call(tabsEl.querySelectorAll('.tab'), function(b, idx){
+      b.setAttribute('aria-current', idx === t ? 'true' : 'false');
+    });
+    var active = tabsEl.querySelectorAll('.tab')[t];
+    if (active && active.scrollIntoView) active.scrollIntoView({block:'nearest', inline:'nearest'});
+    slides[i].scrollTop = 0;
+    if (location.hash !== '#' + (i+1)) history.replaceState(null, '', '#' + (i+1));
+  }
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(i+1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(i-1); }
+    else if (e.key === 'Home') { e.preventDefault(); go(0); }
+    else if (e.key === 'End') { e.preventDefault(); go(slides.length-1); }
+    else if (e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen();
+    }
+  });
+
+  var startX = null;
+  document.addEventListener('touchstart', function(e){ startX = e.touches[0].clientX; }, {passive:true});
+  document.addEventListener('touchend', function(e){
+    if (startX === null) return;
+    var dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 60) go(dx < 0 ? i+1 : i-1);
+    startX = null;
+  }, {passive:true});
+
+  var start = parseInt((location.hash || '').slice(1), 10);
+  go(isNaN(start) || start < 1 || start > slides.length ? 0 : start - 1);
+})();
+</script>
+</body>
+</html>
